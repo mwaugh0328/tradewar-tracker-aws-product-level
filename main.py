@@ -116,7 +116,7 @@ def make_plot():
     plot.yaxis.axis_label_text_font_style = 'bold'
     plot.yaxis.axis_label_text_font_size = "13px"
     
-    p.sizing_mode= "scale_both"
+    plot.sizing_mode= "scale_both"
     
     
     if level_select.value == 'US Dollars':
