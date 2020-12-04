@@ -25,7 +25,7 @@ from bokeh.transform import factor_cmap
 
 background = "#ffffff"
 
-file = ".\\data"+ "\\data.parquet"
+file = "./data"+ "/data.parquet"
 
 df = pq.read_table(file).to_pandas()
 
