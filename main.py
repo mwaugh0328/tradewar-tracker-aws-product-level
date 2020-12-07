@@ -29,6 +29,8 @@ df = pq.read_table(file).to_pandas()
 
 options = df.index.unique(0).to_list()
 
+#print(options)
+
 product = "IRON AND STEEL, HS CODE 72"
 
 level = "US Dollars"
@@ -38,12 +40,25 @@ level = "US Dollars"
 
 def growth_trade(foo):
     # what this function does is take a dataframe and create a relative 
+        
+    return 100*((foo["china_exports"]/foo["china_exports"].shift(12)) - 1)
+
+def cum_trade(foo):
     
-    foo["growth"] = 100*((foo["china_exports"]/foo["china_exports"].shift(12)) - 1)
+    outdf = pd.DataFrame([])
     
-    return foo
+    outdf["cuml_trade_2017"] = foo["china_exports"].loc["2017"].cumsum()
+        
+    outdf.index = pd.date_range(start="2020-01-01", end="2020-12-01", freq = "MS")
+    
+    outdf["cuml_trade_2020"] = foo["china_exports"].loc["2020"].cumsum()
+    
+    return outdf
 
 def make_plot():
+    
+    height = 533
+    width = 675
     
     foo = df.loc[product_select.value]
     # below there is an object of selections which will be one of the values in 
@@ -55,19 +70,44 @@ def make_plot():
         y = foo['china_exports']
         
     if level_select.value == 'Year over Year % Change':
-        foo = growth_trade(foo)
-        y = foo["growth"]
+        y = growth_trade(foo)
+        
+    if level_select.value == "Cumulative Purchases 2020 vs 2017":
+        cuml = cum_trade(foo)
+        x = cuml.index
+        y2017 = cuml["cuml_trade_2017"]
+        y2020 = cuml["cuml_trade_2020"] 
+
+        
+    title = "US Exports to China of " + product_select.value.title().upper()
     
+    if level_select.value != "Cumulative Purchases 2020 vs 2017":
+        
     # This is standard bokeh stuff so far
-    plot = figure(x_axis_type="datetime", plot_width=800, toolbar_location = 'below',
-           tools = "box_zoom, reset, pan, xwheel_zoom", x_range = (dt.datetime(2017,7,1),dt.datetime(2021,1,1)) )
-    
+        plot = figure(x_axis_type="datetime", plot_width=800, toolbar_location = 'below',
+           tools = "box_zoom, reset, pan, xwheel_zoom", title = title,
+                  x_range = (dt.datetime(2017,7,1),dt.datetime(2021,1,1)) )
 
-    
-    plot.title.text = "US Exports to China of " + product_select.value.title()
-
-    plot.line(x = x,
+        plot.line(x = x,
               y = y, line_width=3.5, line_alpha=0.75, line_color = "slategray")
+    
+    if level_select.value == "Cumulative Purchases 2020 vs 2017":
+        
+        plot = figure(x_axis_type="datetime", plot_width=800, toolbar_location = 'below',
+               tools = "box_zoom, reset, pan", title = title,
+                  x_range = (dt.datetime(2020,1,1),dt.datetime(2021,1,1)) )
+
+        plot.line(x = x,
+                  y = y2017, line_width=3.5, line_alpha=0.5, line_color = "red"
+                  , legend_label= "2017")
+        
+        plot.line(x = x,
+                  y = y2020, line_width=3.5, line_alpha=0.75, line_color = "slategray", line_dash = "dashed"
+                  , legend_label= "2020")
+                  
+        plot.legend.title = 'Cumulative Purchases'
+        plot.legend.location = "top_left"
+        plot.legend.title_text_font_style = "bold"
     
     # fixed attributes
     plot.xaxis.axis_label = None
@@ -94,10 +134,17 @@ def make_plot():
             </div>
             </div>
             """
+    if level_select.value == "Cumulative Purchases 2020 vs 2017":
+    
+        TIMETOOLTIPS = TIMETOOLTIPS + """
+            <span style="font-size: 13px; font-weight: bold"> $data_x{%b}:  $data_y{$0.0a}</span>   
+            </div>
+            </div>
+            """    
         
     if level_select.value == 'Year over Year % Change':
-            if y.max() > 1500:
-                plot.y_range.end = 1500
+        if y.max() > 1500:
+            plot.y_range.end = 1500
     
     plot.add_tools(HoverTool(tooltips = TIMETOOLTIPS,  line_policy='nearest', formatters={'$data_x': 'datetime'}))
     
@@ -119,7 +166,7 @@ def make_plot():
     plot.sizing_mode= "scale_both"
     
     
-    if level_select.value == 'US Dollars':
+    if level_select.value != 'Year over Year % Change':
         
         plot.yaxis.formatter = NumeralTickFormatter(format="($0. a)")
         
@@ -129,7 +176,12 @@ def make_plot():
         
         plot.yaxis.axis_label = level_select.value
     
-
+    plot.max_height = height
+    plot.max_width = width
+    
+    plot.min_height = int(0.25*height)
+    plot.min_width = int(0.25*width)
+    
     return plot
 
 def update_plot(attrname, old, new):
@@ -139,22 +191,26 @@ def update_plot(attrname, old, new):
 # so it updates the layout and [0] is the first option (see below there is a row with the
 # first entry the plot, then the controls)
 
-level_select = Select(value=level, title='Tranformations', options=['US Dollars', 'Year over Year % Change'])
+level_select = Select(value=level, title='Tranformations', options=['US Dollars', 'Year over Year % Change', "Cumulative Purchases 2020 vs 2017"])
 level_select.on_change('value', update_plot)
 
-product_select = Select(value=product, title='Product', options=sorted(options), width=300)
+#print(sorted(options))
+
+product_select = Select(value=product, title='Product', options=sorted(options), width=350)
 # This is the key thing that creates teh selection object
 
 product_select.on_change('value', update_plot)
 # Change the value upone selection via the update plot 
 
-div0 = Div(text = """Each catagoy is a 2 digit HS Code. Only Phase One coverved products as defined in <b>Annex 6-1 of The Agreement</b>
-    within that HS Code are shown. Red marks the period of Section 301 tariffs and retaliation. Blue is period of agreement. \n
+div0 = Div(text = """Each category is a 2 digit HS Code. Only Phase One covered products as defined in Annex 6-1 of The Agreement within that HS Code are shown. Red marks the period of Section 301 tariffs and retaliation. Blue is period of agreement.\n
     \n
     \n
-    """, width=300, background = background, style={"justify-content": "space-between", "display": "flex"} )
+    """, width=350, background = background, style={"justify-content": "space-between", "display": "flex"} )
 
-controls = column(product_select, div0, level_select)
+div1 = Div(text = """Transformations: US Dollars, year over year growth rate and cumulative purchases in 2017 vs 2020.\n The later transformation cumulates Chinese purchases over each month in 2017 and 2020 and compares each. Because 2017 is the benchmark year for The Agreement, this measure provides a sense, for each product category, China's progress towards meeting their purchase commitments.\n
+    """, width=350, background = background, style={"justify-content": "space-between", "display": "flex"} )
+
+controls = column(product_select, div0, level_select, div1)
 
 layout = row(make_plot(), controls)
 
