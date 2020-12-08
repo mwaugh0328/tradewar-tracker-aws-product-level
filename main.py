@@ -215,7 +215,8 @@ controls = column(product_select, div0, level_select, div1)
 height = int(1.95*533)
 width = int(1.95*675)
 
-layout = row(make_plot(), controls, max_height = height, max_width = width,)
+layout = row(make_plot(), controls, sizing_mode = "scale_both", max_height = height, max_width = width,
+              min_height = int(0.25*height), min_width = int(0.25*width))
 
 curdoc().add_root(layout)
 curdoc().title = "us-china-products"
