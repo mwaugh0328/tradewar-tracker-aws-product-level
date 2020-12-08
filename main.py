@@ -84,7 +84,7 @@ def make_plot():
     if level_select.value != "Cumulative Purchases 2020 vs 2017":
         
     # This is standard bokeh stuff so far
-        plot = figure(x_axis_type="datetime", plot_width=800, toolbar_location = 'below',
+        plot = figure(x_axis_type="datetime", plot_height = height, plot_width=width, toolbar_location = 'below',
            tools = "box_zoom, reset, pan, xwheel_zoom", title = title,
                   x_range = (dt.datetime(2017,7,1),dt.datetime(2021,1,1)) )
 
@@ -93,7 +93,7 @@ def make_plot():
     
     if level_select.value == "Cumulative Purchases 2020 vs 2017":
         
-        plot = figure(x_axis_type="datetime", plot_width=800, toolbar_location = 'below',
+        plot = figure(x_axis_type="datetime", plot_height = height, plot_width=width, toolbar_location = 'below',
                tools = "box_zoom, reset, pan", title = title,
                   x_range = (dt.datetime(2020,1,1),dt.datetime(2021,1,1)) )
 
@@ -196,7 +196,7 @@ level_select.on_change('value', update_plot)
 
 #print(sorted(options))
 
-product_select = Select(value=product, title='Product', options=sorted(options), width=350)
+product_select = Select(value=product, title='Product', options=sorted(options), width=400)
 # This is the key thing that creates teh selection object
 
 product_select.on_change('value', update_plot)
@@ -205,10 +205,10 @@ product_select.on_change('value', update_plot)
 div0 = Div(text = """Each category is a 2 digit HS Code. Only Phase One covered products as defined in Annex 6-1 of The Agreement within that HS Code are shown. Red marks the period of Section 301 tariffs and retaliation. Blue is period of agreement.\n
     \n
     \n
-    """, width=350, background = background, style={"justify-content": "space-between", "display": "flex"} )
+    """, width=400, background = background, style={"justify-content": "space-between", "display": "flex"} )
 
 div1 = Div(text = """Transformations: US Dollars, year over year growth rate and cumulative purchases in 2017 vs 2020.\n The later transformation cumulates Chinese purchases over each month in 2017 and 2020 and compares each. Because 2017 is the benchmark year for The Agreement, this measure provides a sense, for each product category, China's progress towards meeting their purchase commitments.\n
-    """, width=350, background = background, style={"justify-content": "space-between", "display": "flex"} )
+    """, width=400, background = background, style={"justify-content": "space-between", "display": "flex"} )
 
 controls = column(product_select, div0, level_select, div1)
 
