@@ -212,7 +212,10 @@ div1 = Div(text = """Transformations: US Dollars, year over year growth rate and
 
 controls = column(product_select, div0, level_select, div1)
 
-layout = row(make_plot(), controls)
+height = int(1.95*533)
+width = int(1.95*675)
+
+layout = row(make_plot(), controls, max_height = height, max_width = width,)
 
 curdoc().add_root(layout)
 curdoc().title = "us-china-products"
