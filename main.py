@@ -1,6 +1,8 @@
 import datetime as dt
 from os.path import dirname, join
 
+import numpy as np
+
 import pandas as pd
 
 import pyarrow as pa
@@ -36,7 +38,7 @@ product = "IRON AND STEEL, HS CODE 72"
 level = "US Dollars"
 
 #################################################################################
-#This then makes the plot...
+#These are functions used in the plot...
 
 def growth_trade(foo):
     # what this function does is take a dataframe and create a relative 
@@ -55,10 +57,13 @@ def cum_trade(foo):
     
     return outdf
 
+#################################################################################
+# Then this makes the simple plots:
+
 def make_plot():
     
-    height = 533
-    width = 675
+    height = int(1.15*533)
+    width = int(1.15*750)
     
     foo = df.loc[product_select.value]
     # below there is an object of selections which will be one of the values in 
@@ -98,11 +103,11 @@ def make_plot():
                   x_range = (dt.datetime(2020,1,1),dt.datetime(2021,1,1)) )
 
         plot.line(x = x,
-                  y = y2017, line_width=3.5, line_alpha=0.5, line_color = "red"
+                  y = y2017, line_width=3.5, line_alpha=0.5, line_color = "red", line_dash = "dashed"
                   , legend_label= "2017")
         
         plot.line(x = x,
-                  y = y2020, line_width=3.5, line_alpha=0.75, line_color = "slategray", line_dash = "dashed"
+                  y = y2020, line_width=3.5, line_alpha=0.75, line_color = "darkblue"
                   , legend_label= "2020")
                   
         plot.legend.title = 'Cumulative Purchases'
@@ -127,6 +132,8 @@ def make_plot():
             </div>
             """
         
+        plot.add_tools(HoverTool(tooltips = TIMETOOLTIPS,  line_policy='nearest', formatters={'$data_x': 'datetime'}))
+        
     if level_select.value == 'US Dollars':
     
         TIMETOOLTIPS = TIMETOOLTIPS + """
@@ -134,19 +141,43 @@ def make_plot():
             </div>
             </div>
             """
+        plot.add_tools(HoverTool(tooltips = TIMETOOLTIPS,  line_policy='nearest', formatters={'$data_x': 'datetime'}))
+        
     if level_select.value == "Cumulative Purchases 2020 vs 2017":
+        #################################################################################
+        singlesource2020 = ColumnDataSource({
+                'xs': x.values,
+                'ys': y2020.values,
+                "dates": np.array(x),
+                })
+
+    
+        c2020 = plot.circle(x="xs", y="ys", size=35,
+                    source = singlesource2020, color = "crimson",alpha=0.0)
+    
+        singlesource2017 = ColumnDataSource({
+                'xs': x.values,
+                'ys': y2017.values,
+                "dates": np.array(pd.date_range(start="2017-01-01", end="2017-12-01", freq = "MS")),
+                })
+    
+        c2017 = plot.circle(x="xs", y="ys", size=35,
+                    source = singlesource2017, color = "darkblue",alpha=0.0)
+
     
         TIMETOOLTIPS = TIMETOOLTIPS + """
-            <span style="font-size: 13px; font-weight: bold"> $data_x{%b}:  $data_y{$0.0a}</span>   
+            <span style="font-size: 13px; font-weight: bold"> @dates{%b %Y}:  $data_y{$0.0a}</span>   
             </div>
             </div>
-            """    
+            """
+        
+        plot.add_tools(HoverTool(tooltips = TIMETOOLTIPS,  line_policy='nearest', formatters={'@dates': 'datetime'}, renderers = [c2017,c2020]))
         
     if level_select.value == 'Year over Year % Change':
         if y.max() > 1500:
             plot.y_range.end = 1500
     
-    plot.add_tools(HoverTool(tooltips = TIMETOOLTIPS,  line_policy='nearest', formatters={'$data_x': 'datetime'}))
+    
     
     plot.title.text_font_size = '13pt'
     plot.background_fill_color = background 
