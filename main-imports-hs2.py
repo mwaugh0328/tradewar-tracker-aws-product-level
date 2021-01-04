@@ -66,17 +66,29 @@ def make_plot():
     if level_select.value == 'US Dollars':
         y = foo['imports']
         
+        title = "US Imports from " + country_select.value.title().upper() + " of " + product_select.value.title().upper()
+        
+    if level_select.value == 'Tariff Revenue':
+        y = foo['duty']
+        
+        title = "US Tariff Revenue on " + country_select.value.title().upper() + " of " + product_select.value.title().upper()
+        
+    if level_select.value == 'Implied Tariff':
+        y = foo['itariff']
+        
+        title = "US Implied Tariff on " + country_select.value.title().upper() + " of " + product_select.value.title().upper()
+        
     if level_select.value == 'Year over Year % Change':
         y = growth_trade(foo)
         
+        title = "US Imports from " + country_select.value.title().upper() + " of " + product_select.value.title().upper()
         
-    title = "US Imports from " + country_select.value.title().upper() + " of " + product_select.value.title().upper()
-    
+
     if level_select.value != "Cumulative Purchases 2020 vs 2017":
         
     # This is standard bokeh stuff so far
         plot = figure(x_axis_type="datetime", plot_height = height, plot_width=width, toolbar_location = 'below',
-           tools = "box_zoom, reset, pan, xwheel_zoom", title = title,
+           tools = "box_zoom, reset, pan, xwheel_zoom, ywheel_zoom", title = title,
                   x_range = (dt.datetime(2017,7,1),dt.datetime(2021,1,1)) )
 
         plot.line(x = x,
@@ -95,7 +107,7 @@ def make_plot():
     if level_select.value == 'Year over Year % Change':
     
         TIMETOOLTIPS = TIMETOOLTIPS + """
-            <span style="font-size: 13px; font-weight: bold"> $data_x{%b %Y}:  $data_y{0}%</span>   
+            <span style="font-size: 13px; font-weight: bold"> $data_x{%b %Y}:  $data_y{0.0}%</span>   
             </div>
             </div>
             """
@@ -106,6 +118,24 @@ def make_plot():
     
         TIMETOOLTIPS = TIMETOOLTIPS + """
             <span style="font-size: 13px; font-weight: bold"> $data_x{%b %Y}:  $data_y{$0.0a}</span>   
+            </div>
+            </div>
+            """
+        plot.add_tools(HoverTool(tooltips = TIMETOOLTIPS,  line_policy='nearest', formatters={'$data_x': 'datetime'}))
+        
+    if level_select.value == 'Tariff Revenue':
+    
+        TIMETOOLTIPS = TIMETOOLTIPS + """
+            <span style="font-size: 13px; font-weight: bold"> $data_x{%b %Y}:  $data_y{$0.0a}</span>   
+            </div>
+            </div>
+            """
+        plot.add_tools(HoverTool(tooltips = TIMETOOLTIPS,  line_policy='nearest', formatters={'$data_x': 'datetime'}))
+        
+    if level_select.value == 'Implied Tariff':
+    
+        TIMETOOLTIPS = TIMETOOLTIPS + """
+            <span style="font-size: 13px; font-weight: bold"> $data_x{%b %Y}:  $data_y{0.0}</span>   
             </div>
             </div>
             """
@@ -138,8 +168,7 @@ def make_plot():
     plot.yaxis.axis_label_text_font_size = "13px"
     
     plot.sizing_mode= "scale_both"
-    
-    
+        
     if level_select.value != 'Year over Year % Change':
         
         plot.yaxis.formatter = NumeralTickFormatter(format="($0. a)")
@@ -147,6 +176,12 @@ def make_plot():
         plot.yaxis.axis_label = "US Dollars"
         
     if level_select.value == 'Year over Year % Change':
+        
+        plot.yaxis.axis_label = level_select.value
+        
+    if level_select.value == 'Implied Tariff':
+        
+        plot.yaxis.formatter = NumeralTickFormatter(format="(0.0)")
         
         plot.yaxis.axis_label = level_select.value
     
@@ -167,7 +202,7 @@ def update_plot(attrname, old, new):
 # so it updates the layout and [0] is the first option (see below there is a row with the
 # first entry the plot, then the controls)
 
-level_select = Select(value=level, title='Tranformations', options=['US Dollars', 'Year over Year % Change'])
+level_select = Select(value=level, title='Tranformations', options=['US Dollars', 'Year over Year % Change', "Tariff Revenue", "Implied Tariff"])
 level_select.on_change('value', update_plot)
 
 #print(sorted(options))
@@ -192,7 +227,10 @@ div0 = Div(text = """Each category is a 2 digit HS Code. ALL PRODUCTS is the sum
 div1 = Div(text = """Top 20 Countries by import volume and TOTAL which aggregates across all countries in the world.\n
     """, width=400, background = background, style={"justify-content": "space-between", "display": "flex"} )
 
-controls = column(country_select,div1, product_select, div0, level_select)
+div2 = Div(text = """Transformations: Dollars, Year over Year Percent Change, Tariff (Duty) Revenue, Implied Tariff\n
+    """, width=400, background = background, style={"justify-content": "space-between", "display": "flex"} )
+
+controls = column(country_select,div1, product_select, div0, level_select,div2)
 
 height = int(1.95*533)
 width = int(1.95*675)
