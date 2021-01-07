@@ -10,7 +10,7 @@ import pyarrow.parquet as pq
 
 from bokeh.io import curdoc
 from bokeh.layouts import column, gridplot, row
-from bokeh.models import ColumnDataSource, DataRange1d, Select, HoverTool, Panel, Tabs, LinearColorMapper, Range1d
+from bokeh.models import ColumnDataSource, DataRange1d, Select, HoverTool, Panel, Tabs, LinearColorMapper, Range1d, MultiChoice
 from bokeh.models import NumeralTickFormatter, Title, Label, Paragraph, Div, CustomJSHover, BoxAnnotation
 from bokeh.models import ColorBar
 from bokeh.palettes import brewer, Spectral6
@@ -55,6 +55,8 @@ def make_plot():
     height = int(1.15*533)
     width = int(1.15*750)
     
+    print(country_select.value)
+    
     foo = df.loc[country_select.value]
     
     foo = foo.loc[product_select.value]
@@ -71,15 +73,13 @@ def make_plot():
         
         
     title = "US EXPORTS to " + country_select.value.title().upper() + " of " + product_select.value.title().upper()
-    
-    if level_select.value != "Cumulative Purchases 2020 vs 2017":
-        
+
     # This is standard bokeh stuff so far
-        plot = figure(x_axis_type="datetime", plot_height = height, plot_width=width, toolbar_location = 'below',
+    plot = figure(x_axis_type="datetime", plot_height = height, plot_width=width, toolbar_location = 'below',
            tools = "box_zoom, reset, pan, xwheel_zoom", title = title,
                   x_range = (dt.datetime(2017,7,1),dt.datetime(2021,1,1)) )
 
-        plot.line(x = x,
+    plot.line(x = x,
               y = y, line_width=3.5, line_alpha=0.75, line_color = "slategray")
         
     # fixed attributes
@@ -174,10 +174,12 @@ level_select.on_change('value', update_plot)
 #################################################################################
 
 country_select = Select(value=country, title='Country', options=sorted(country_options), width=400)
+#country_select = MultiChoice(value=[country], title='Country', options=sorted(country_options), width=400)
 # This is the key thing that creates teh selection object
 
 country_select.on_change('value', update_plot)
-                        
+
+
 #################################################################################
 
 product_select = Select(value=product, title='HS2 Product', options=sorted(product_options), width=400)
