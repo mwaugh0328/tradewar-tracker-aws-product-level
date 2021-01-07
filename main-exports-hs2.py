@@ -176,14 +176,14 @@ def update_plot(attrname, old, new):
 # so it updates the layout and [0] is the first option (see below there is a row with the
 # first entry the plot, then the controls)
 
-level_select = Select(value=level, title='Tranformations', options=['US Dollars', 'Year over Year % Change'])
+level_select = Select(value=level, title='Tranformations', options=['US Dollars', 'Year over Year % Change'], width=350)
 level_select.on_change('value', update_plot)
 
 #print(sorted(options))
 #################################################################################
 
 #country_select = Select(value=country, title='Country', options=sorted(country_options), width=400)
-country_select = MultiChoice(value=[country], title='Country', options=sorted(country_options), width=400)
+country_select = MultiChoice(value=[country], title='Country', options=sorted(country_options), width=325)
 # This is the key thing that creates teh selection object
 
 country_select.on_change('value', update_plot)
@@ -191,7 +191,7 @@ country_select.on_change('value', update_plot)
 
 #################################################################################
 
-product_select = Select(value=product, title='HS2 Product', options=sorted(product_options), width=400)
+product_select = Select(value=product, title='HS2 Product', options=sorted(product_options), width=350)
 # This is the key thing that creates teh selection object
 
 product_select.on_change('value', update_plot)
