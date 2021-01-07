@@ -44,8 +44,9 @@ level = "US Dollars"
 
 def growth_trade(foo):
     # what this function does is take a dataframe and create a relative 
-        
-    return 100*((foo["exports"]/foo["exports"].shift(12)) - 1)
+    foo["growth"] = 100*((foo["exports"]/foo["exports"].shift(12)) - 1)    
+    
+    return foo
 
 #################################################################################
 # Then this makes the simple plots:
@@ -54,42 +55,59 @@ def make_plot():
     
     height = int(1.15*533)
     width = int(1.15*750)
-    
-    print(country_select.value)
-    
-    foo = df.loc[country_select.value]
-    
-    foo = foo.loc[product_select.value]
+        
+    foo = df.loc[(country_select.value, product_select.value),:]
     # below there is an object of selections which will be one of the values in 
     # the list of options. So the .value then grabs that particular option selected.
-
-    x = foo.index
-    
-    if level_select.value == 'US Dollars':
-        y = foo['exports']
         
     if level_select.value == 'Year over Year % Change':
-        y = growth_trade(foo)
+        foo = foo.groupby(["CTY_NAME"]).apply(growth_trade)
+        level_series = "growth"
+        
+    if level_select.value == 'US Dollars':
+        level_series = "exports"
+        
+    title_name = ""    
+    for name in country_select.value:
+        title_name = title_name + name[0:3] + ", "
         
         
-    title = "US EXPORTS to " + country_select.value.title().upper() + " of " + product_select.value.title().upper()
+    title = "US EXPORTS to " + title_name + "of " + product_select.value.title().upper()
 
     # This is standard bokeh stuff so far
     plot = figure(x_axis_type="datetime", plot_height = height, plot_width=width, toolbar_location = 'below',
            tools = "box_zoom, reset, pan, xwheel_zoom", title = title,
                   x_range = (dt.datetime(2017,7,1),dt.datetime(2021,1,1)) )
+    
+    numlines=len(country_select.value)
+    
+    multi_line_source = ColumnDataSource({
+            'xs': [foo.index.get_level_values(2).unique()]*numlines,
+            'ys': [foo.loc[(name, product_select.value),level_series].values for name in country_select.value],
+            'label': [name for name in country_select.value]})
 
-    plot.line(x = x,
-              y = y, line_width=3.5, line_alpha=0.75, line_color = "slategray")
+    plot.multi_line(xs= "xs",
+                ys= "ys",
+                line_width=3, line_alpha=0.75, line_color = "slategray",
+                hover_line_alpha=0.75, hover_line_width = 5,
+                hover_line_color= "crimson", source = multi_line_source)
         
     # fixed attributes
     plot.xaxis.axis_label = None
     plot.yaxis.axis_label = ""
     plot.axis.axis_label_text_font_style = "bold"
     plot.grid.grid_line_alpha = 0.3
+
+    #TIMETOOLTIPS = """
+     #       <div style="background-color:#F5F5F5; opacity: 0.95; border: 15px 15px 15px 15px;">
+     #        <div style = "text-align:left;">"""
     
     TIMETOOLTIPS = """
-            <div style="background-color:#F5F5F5; opacity: 0.95; border: 15px 15px 15px 15px;">
+            <div style="background-color:#F5F5F5; opacity: 0.95; border: 5px 5px 5px 5px;">
+            <div style = "text-align:left;">
+            <span style="font-size: 13px; font-weight: bold"> @label
+             </span>
+             </div>
              <div style = "text-align:left;">"""
     
     if level_select.value == 'Year over Year % Change':
@@ -112,7 +130,7 @@ def make_plot():
         plot.add_tools(HoverTool(tooltips = TIMETOOLTIPS,  line_policy='nearest', formatters={'$data_x': 'datetime'}))
                 
     if level_select.value == 'Year over Year % Change':
-        if y.max() > 1500:
+        if foo[level_series].max() > 1500:
             plot.y_range.end = 1500
     
     
@@ -124,22 +142,13 @@ def make_plot():
     
     tradewar_box = BoxAnnotation(left=dt.datetime(2020,3,1), right=dt.datetime(2021,10,11), fill_color='red', fill_alpha=0.1)
     plot.add_layout(tradewar_box)
-    
-    if country_select.value == "CHINA":
-    
-        tradewar_box = BoxAnnotation(left=dt.datetime(2018,7,1), right=dt.datetime(2019,10,11), fill_color='red', fill_alpha=0.1)
-        plot.add_layout(tradewar_box)
-        
-        tradewar_box = BoxAnnotation(left=dt.datetime(2020,1,1), right=dt.datetime(2021,12,31), fill_color='blue', fill_alpha=0.1)
-        plot.add_layout(tradewar_box)
-        
+            
     #p.yaxis.axis_label = 
     plot.yaxis.axis_label_text_font_style = 'bold'
     plot.yaxis.axis_label_text_font_size = "13px"
     
     plot.sizing_mode= "scale_both"
-    
-    
+
     if level_select.value != 'Year over Year % Change':
         
         plot.yaxis.formatter = NumeralTickFormatter(format="($0. a)")
@@ -173,8 +182,8 @@ level_select.on_change('value', update_plot)
 #print(sorted(options))
 #################################################################################
 
-country_select = Select(value=country, title='Country', options=sorted(country_options), width=400)
-#country_select = MultiChoice(value=[country], title='Country', options=sorted(country_options), width=400)
+#country_select = Select(value=country, title='Country', options=sorted(country_options), width=400)
+country_select = MultiChoice(value=[country], title='Country', options=sorted(country_options), width=400)
 # This is the key thing that creates teh selection object
 
 country_select.on_change('value', update_plot)
@@ -191,7 +200,7 @@ product_select.on_change('value', update_plot)
 div0 = Div(text = """Each category is a 2 digit HS Code. ALL PRODUCTS is the sum of exports across all product catagories.\n
     """, width=400, background = background, style={"justify-content": "space-between", "display": "flex"} )
 
-div1 = Div(text = """Top 20 Countries by export volume and TOTAL which aggregates across all countries in the world.\n
+div1 = Div(text = """Top 20 Countries by export volume and TOTAL which aggregates across all countries in the world. Select multiple countries.\n
     """, width=400, background = background, style={"justify-content": "space-between", "display": "flex"} )
 
 controls = column(country_select,div1, product_select, div0, level_select)
