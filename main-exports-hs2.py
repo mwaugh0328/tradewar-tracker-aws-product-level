@@ -198,10 +198,10 @@ product_select.on_change('value', update_plot)
 # Change the value upone selection via the update plot 
 
 div0 = Div(text = """Each category is a 2 digit HS Code. ALL PRODUCTS is the sum of exports across all product catagories.\n
-    """, width=400, background = background, style={"justify-content": "space-between", "display": "flex"} )
+    """, width=350, background = background, style={"justify-content": "space-between", "display": "flex"} )
 
 div1 = Div(text = """Top 20 Countries by export volume and TOTAL which aggregates across all countries in the world. Select multiple countries.\n
-    """, width=400, background = background, style={"justify-content": "space-between", "display": "flex"} )
+    """, width=350, background = background, style={"justify-content": "space-between", "display": "flex"} )
 
 controls = column(country_select,div1, product_select, div0, level_select)
 
